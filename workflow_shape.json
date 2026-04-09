@@ -1,0 +1,152 @@
+{
+  "last_node_id": 23,
+  "last_link_id": 23,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "CheckpointLoaderSimple",
+      "pos": [50, 50],
+      "size": [350, 100],
+      "title": "Cargar SDXL",
+      "widgets_values": ["sd_xl_base_1.0.safetensors"],
+      "outputs": [
+        {"name": "MODEL", "type": "MODEL", "links": [1], "slot_index": 0},
+        {"name": "CLIP", "type": "CLIP", "links": [2, 3], "slot_index": 1},
+        {"name": "VAE", "type": "VAE", "links": [4], "slot_index": 2}
+      ]
+    },
+    {
+      "id": 2,
+      "type": "CLIPTextEncode",
+      "pos": [480, 50],
+      "size": [400, 120],
+      "title": "Prompt Positivo",
+      "widgets_values": ["a cute cartoon cat character, orange tabby, standing upright, wearing a blue scarf, simple design, centered, white background, full body, 3d model reference, studio lighting"],
+      "inputs": [{"name": "clip", "type": "CLIP", "link": 2}],
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [5], "slot_index": 0}]
+    },
+    {
+      "id": 3,
+      "type": "CLIPTextEncode",
+      "pos": [480, 220],
+      "size": [400, 120],
+      "title": "Prompt Negativo",
+      "widgets_values": ["text, watermark, blurry, low quality, multiple objects, background scene, landscape"],
+      "inputs": [{"name": "clip", "type": "CLIP", "link": 3}],
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [6], "slot_index": 0}]
+    },
+    {
+      "id": 4,
+      "type": "EmptyLatentImage",
+      "pos": [480, 400],
+      "size": [300, 110],
+      "widgets_values": [1024, 1024, 1],
+      "outputs": [{"name": "LATENT", "type": "LATENT", "links": [7], "slot_index": 0}]
+    },
+    {
+      "id": 5,
+      "type": "KSampler",
+      "pos": [960, 50],
+      "size": [320, 300],
+      "title": "KSampler (Texto a Imagen)",
+      "widgets_values": [42, "randomize", 25, 7.0, "euler", "normal", 1.0],
+      "inputs": [
+        {"name": "model", "type": "MODEL", "link": 1},
+        {"name": "positive", "type": "CONDITIONING", "link": 5},
+        {"name": "negative", "type": "CONDITIONING", "link": 6},
+        {"name": "latent_image", "type": "LATENT", "link": 7}
+      ],
+      "outputs": [{"name": "LATENT", "type": "LATENT", "links": [8], "slot_index": 0}]
+    },
+    {
+      "id": 6,
+      "type": "VAEDecode",
+      "pos": [1360, 50],
+      "size": [250, 60],
+      "inputs": [
+        {"name": "samples", "type": "LATENT", "link": 8},
+        {"name": "vae", "type": "VAE", "link": 4}
+      ],
+      "outputs": [{"name": "IMAGE", "type": "IMAGE", "links": [9, 10], "slot_index": 0}]
+    },
+    {
+      "id": 7,
+      "type": "SaveImage",
+      "pos": [1360, 170],
+      "size": [400, 400],
+      "title": "Guardar Imagen",
+      "widgets_values": ["generated/imagen"],
+      "inputs": [{"name": "images", "type": "IMAGE", "link": 9}]
+    },
+    {
+      "id": 20,
+      "type": "Hy3DModelLoader",
+      "pos": [1800, 50],
+      "size": [350, 80],
+      "title": "Cargar Hunyuan3D DiT",
+      "widgets_values": ["hunyuan3d-dit-v2-0-fast.safetensors"],
+      "outputs": [
+        {"name": "pipeline", "type": "HY3DMODEL", "links": [20], "slot_index": 0},
+        {"name": "vae", "type": "HY3DVAE", "links": [21], "slot_index": 1}
+      ]
+    },
+    {
+      "id": 21,
+      "type": "Hy3DGenerateMesh",
+      "pos": [2220, 50],
+      "size": [300, 180],
+      "title": "Generar Forma 3D",
+      "widgets_values": [5.5, 30, 42],
+      "inputs": [
+        {"name": "pipeline", "type": "HY3DMODEL", "link": 20},
+        {"name": "image", "type": "IMAGE", "link": 10}
+      ],
+      "outputs": [{"name": "latents", "type": "HY3DLATENT", "links": [22], "slot_index": 0}]
+    },
+    {
+      "id": 22,
+      "type": "Hy3DVAEDecode",
+      "pos": [2600, 50],
+      "size": [300, 220],
+      "title": "VAE Decode 3D",
+      "widgets_values": [1.01, 256, 8000, 0.0, "mc"],
+      "inputs": [
+        {"name": "vae", "type": "HY3DVAE", "link": 21},
+        {"name": "latents", "type": "HY3DLATENT", "link": 22}
+      ],
+      "outputs": [{"name": "trimesh", "type": "TRIMESH", "links": [23], "slot_index": 0}]
+    },
+    {
+      "id": 23,
+      "type": "Hy3DExportMesh",
+      "pos": [2980, 50],
+      "size": [300, 120],
+      "title": "Guardar Mesh",
+      "widgets_values": ["mesh/modelo", "glb"],
+      "inputs": [{"name": "trimesh", "type": "TRIMESH", "link": 23}]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 5, 0, "MODEL"],
+    [2, 1, 1, 2, 0, "CLIP"],
+    [3, 1, 1, 3, 0, "CLIP"],
+    [4, 1, 2, 6, 1, "VAE"],
+    [5, 2, 0, 5, 1, "CONDITIONING"],
+    [6, 3, 0, 5, 2, "CONDITIONING"],
+    [7, 4, 0, 5, 3, "LATENT"],
+    [8, 5, 0, 6, 0, "LATENT"],
+    [9, 6, 0, 7, 0, "IMAGE"],
+    [10, 6, 0, 21, 1, "IMAGE"],
+    [20, 20, 0, 21, 0, "HY3DMODEL"],
+    [21, 20, 1, 22, 0, "HY3DVAE"],
+    [22, 21, 0, 22, 1, "HY3DLATENT"],
+    [23, 22, 0, 23, 0, "TRIMESH"]
+  ],
+  "groups": [
+    {"title": "1. Texto a Imagen (SDXL)", "bounding": [30, -30, 1700, 570], "color": "#3f789e", "font_size": 24},
+    {"title": "2. Imagen a 3D (Hunyuan3D)", "bounding": [1780, -30, 1580, 300], "color": "#2e7d32", "font_size": 24}
+  ],
+  "config": {},
+  "extra": {"ds": {"scale": 0.4, "offset": [0, 50]}},
+  "version": 0.4
+}
